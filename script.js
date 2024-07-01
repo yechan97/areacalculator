@@ -1,75 +1,70 @@
-const fileInput = document.getElementById('fileInput');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const output = document.getElementById('output');
-let image, isDrawing = false, points = [], areas = [];
+let canvas = document.getElementById('floorplanCanvas');
+let ctx = canvas.getContext('2d');
+let isDrawing = false;
+let startX, startY;
+let rectangles = [];
+let currentRectangle = null;
 
-fileInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        image = new Image();
-        image.onload = () => {
-            canvas.width = image.width;
-            canvas.height = image.height;
-            ctx.drawImage(image, 0, 0);
-        };
-        image.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-});
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', drawRectangle);
+canvas.addEventListener('mouseup', finishDrawing);
 
-canvas.addEventListener('mousedown', (event) => {
+function startDrawing(e) {
     isDrawing = true;
-    points = [{ x: event.offsetX, y: event.offsetY }];
-});
+    startX = e.offsetX;
+    startY = e.offsetY;
+    currentRectangle = { startX, startY, width: 0, height: 0 };
+}
 
-canvas.addEventListener('mousemove', (event) => {
-    if (isDrawing) {
-        const { offsetX, offsetY } = event;
-        points.push({ x: offsetX, y: offsetY });
-        draw();
-    }
-});
+function drawRectangle(e) {
+    if (!isDrawing) return;
+    const mouseX = e.offsetX;
+    const mouseY = e.offsetY;
 
-canvas.addEventListener('mouseup', () => {
-    isDrawing = false;
-    areas.push([...points]);
-    points = [];
-});
+    const width = mouseX - startX;
+    const height = mouseY - startY;
 
-function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, 0, 0);
-    ctx.beginPath();
-    points.forEach((point, index) => {
-        if (index === 0) {
-            ctx.moveTo(point.x, point.y);
-        } else {
-            ctx.lineTo(point.x, point.y);
-        }
-    });
-    ctx.closePath();
-    ctx.stroke();
+    redrawRectangles();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.strokeRect(startX, startY, width, height);
+
+    currentRectangle.width = width;
+    currentRectangle.height = height;
 }
 
-function calculateArea() {
+function finishDrawing() {
+    if (!isDrawing) return;
+    isDrawing = false;
+    rectangles.push(currentRectangle);
+    currentRectangle = null;
+    updateAreaInfo();
+}
+
+function redrawRectangles() {
+    rectangles.forEach((rect, index) => {
+        ctx.fillStyle = `rgba(0, 0, 255, 0.2)`;
+        ctx.fillRect(rect.startX, rect.startY, rect.width, rect.height);
+        ctx.strokeRect(rect.startX, rect.startY, rect.width, rect.height);
+    });
+}
+
+function updateAreaInfo() {
+    const areaInfo = document.getElementById('areaInfo');
+    areaInfo.innerHTML = '';
     let totalArea = 0;
-    areas.forEach(area => {
-        totalArea += calculatePolygonArea(area);
+    rectangles.forEach((rect, index) => {
+        const area = Math.abs(rect.width * rect.height) / 10000; // cm^2 to m^2
+        totalArea += area;
+        areaInfo.innerHTML += `<p>영역 ${index + 1} - 가로: ${Math.abs(rect.width)}cm, 세로: ${Math.abs(rect.height)}cm, 면적: ${area.toFixed(2)}m²</p>`;
     });
-    output.innerHTML = `선택된 영역의 총 면적: ${totalArea.toFixed(2)} 제곱미터`;
+    areaInfo.innerHTML += `<p><strong>총 면적: ${totalArea.toFixed(2)}m²</strong></p>`;
 }
 
-function calculatePolygonArea(points) {
-    let area = 0;
-    for (let i = 0; i < points.length; i++) {
-        const j = (i + 1) % points.length;
-        area += points[i].x * points[j].y;
-        area -= points[j].x * points[i].y;
-    }
-    area = Math.abs(area) / 2;
-    // Adjust based on your scale; example assumes 1 pixel = 0.1 meter
-    const scale = 0.1;
-    return area * scale * scale;
+function resetCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    rectangles = [];
+    document.getElementById('areaInfo').innerHTML = '';
 }
+
+// Add more logic here for calculating mat requirements based on totalArea from updateAreaInfo function
