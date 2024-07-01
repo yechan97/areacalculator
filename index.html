@@ -49,13 +49,22 @@
             margin: 10px 0;
             color: #555;
         }
-        .image-preview {
-            margin-bottom: 20px;
-            position: relative;
-        }
-        .image-preview img {
-            max-width: 100%;
+        #imageContainer {
+            border: 1px solid #ccc;
+            width: 100%;
             height: auto;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        #imageContainer img {
+            width: 100%;
+            height: auto;
+        }
+        .area {
+            border: 2px solid red;
+            background-color: rgba(255, 0, 0, 0.3);
+            position: absolute;
         }
         .btn {
             padding: 15px 30px;
@@ -69,16 +78,14 @@
         .btn-upload {
             background-color: #007BFF;
         }
-        .btn-process {
-            background-color: #28A745;
-        }
         .btn-reset {
             background-color: #DC3545;
         }
-        .area-label {
-            position: absolute;
-            border: 2px solid rgba(0, 0, 255, 0.5);
-            background-color: rgba(0, 0, 255, 0.2);
+        .btn-calculate {
+            background-color: #28A745;
+        }
+        .btn-undo {
+            background-color: #FFC107;
         }
         .footer {
             text-align: center;
@@ -92,150 +99,270 @@
     <div class="container">
         <h1>토리매트 면적 계산기</h1>
         <div class="upload-box">
-            <input type="file" id="imageUpload">
-            <label for="imageUpload">파일 선택</label>
-            <p id="file-count">선택된 파일 없음</p>
+            <input type="file" id="file-input">
+            <label for="file-input">파일 선택</label>
+            <p id="file-name">선택된 파일 없음</p>
         </div>
-        <div id="imageContainer" class="image-preview">
-            <img id="floorPlan" src="" alt="Floor Plan">
-        </div>
-        <div>
-            <button class="btn btn-process" onclick="undoLastArea()">되돌리기</button>
-            <button class="btn btn-reset" onclick="resetAll()">초기화</button>
-        </div>
-        <div id="result"></div>
+        <div id="imageContainer"></div>
+        <button class="btn btn-undo" onclick="undoArea()">되돌리기</button>
+        <button class="btn btn-reset" onclick="resetAll()">초기화</button>
+        <button class="btn btn-calculate" onclick="calculateAreas()">계산하기</button>
+        <div id="areasInfo"></div>
         <div id="torimatResult"></div>
         <div class="footer">
             <p>by_예찬</p>
         </div>
     </div>
     <script>
+        let imageContainer = document.getElementById('imageContainer');
+        let fileInput = document.getElementById('file-input');
+        let fileName = document.getElementById('file-name');
+        let areasInfo = document.getElementById('areasInfo');
+        let torimatResult = document.getElementById('torimatResult');
         let startX, startY, endX, endY;
-        let isDrawing = false;
         let areas = [];
-        const imageContainer = document.getElementById('imageContainer');
-        const floorPlan = document.getElementById('floorPlan');
-        const result = document.getElementById('result');
+        let scale = 1;
 
-        function loadImage(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                floorPlan.src = e.target.result;
-            }
+        fileInput.addEventListener('change', (event) => {
+            let file = event.target.files[0];
+            fileName.textContent = file.name;
+            let reader = new FileReader();
+            reader.onload = (e) => {
+                let img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    imageContainer.innerHTML = '';
+                    imageContainer.appendChild(img);
+                    img.addEventListener('mousedown', startDrawing);
+                    img.addEventListener('mousemove', draw);
+                    img.addEventListener('mouseup', endDrawing);
+                    img.addEventListener('mouseleave', endDrawing);
+                    scale = img.naturalWidth / img.width;
+                };
+            };
             reader.readAsDataURL(file);
+        });
+
+        function startDrawing(event) {
+            startX = event.offsetX;
+            startY = event.offsetY;
+            endX = startX;
+            endY = startY;
+            imageContainer.style.cursor = 'crosshair';
         }
 
-        floorPlan.addEventListener('mousedown', function (e) {
-            startX = e.offsetX;
-            startY = e.offsetY;
-            isDrawing = true;
-        });
-
-        floorPlan.addEventListener('mousemove', function (e) {
-            if (isDrawing) {
-                endX = e.offsetX;
-                endY = e.offsetY;
-                drawRect(startX, startY, endX, endY);
+        function draw(event) {
+            if (startX !== undefined && startY !== undefined) {
+                endX = event.offsetX;
+                endY = event.offsetY;
+                let width = endX - startX;
+                let height = endY - startY;
+                let areaDiv = document.createElement('div');
+                areaDiv.className = 'area';
+                areaDiv.style.left = startX + 'px';
+                areaDiv.style.top = startY + 'px';
+                areaDiv.style.width = width + 'px';
+                areaDiv.style.height = height + 'px';
+                imageContainer.innerHTML = '';
+                imageContainer.appendChild(event.target);
+                imageContainer.appendChild(areaDiv);
             }
-        });
+        }
 
-        floorPlan.addEventListener('mouseup', function (e) {
-            if (isDrawing) {
-                endX = e.offsetX;
-                endY = e.offsetY;
-                isDrawing = false;
-                const area = calculateArea(startX, startY, endX, endY);
+        function endDrawing(event) {
+            if (startX !== undefined && startY !== undefined) {
+                endX = event.offsetX;
+                endY = event.offsetY;
+                let width = Math.abs(endX - startX);
+                let height = Math.abs(endY - startY);
+                let left = Math.min(startX, endX);
+                let top = Math.min(startY, endY);
+                let areaDiv = document.createElement('div');
+                areaDiv.className = 'area';
+                areaDiv.style.left = left + 'px';
+                areaDiv.style.top = top + 'px';
+                areaDiv.style.width = width + 'px';
+                areaDiv.style.height = height + 'px';
+                imageContainer.appendChild(areaDiv);
+
+                let area = {
+                    left: left * scale,
+                    top: top * scale,
+                    width: width * scale,
+                    height: height * scale
+                };
                 areas.push(area);
-                displayAreas();
+                updateAreasInfo();
+
+                startX = undefined;
+                startY = undefined;
+                imageContainer.style.cursor = 'default';
             }
-        });
-
-        function drawRect(x1, y1, x2, y2) {
-            const rect = document.createElement('div');
-            rect.className = 'area-label';
-            rect.style.left = `${Math.min(x1, x2)}px`;
-            rect.style.top = `${Math.min(y1, y2)}px`;
-            rect.style.width = `${Math.abs(x2 - x1)}px`;
-            rect.style.height = `${Math.abs(y2 - y1)}px`;
-            imageContainer.appendChild(rect);
         }
 
-        function calculateArea(x1, y1, x2, y2) {
-            const width = Math.abs(x2 - x1);
-            const height = Math.abs(y2 - y1);
-            const area = width * height / 10000; // convert to square meters
-            return { x1, y1, x2, y2, width, height, area };
-        }
-
-        function displayAreas() {
-            result.innerHTML = '';
+        function updateAreasInfo() {
+            areasInfo.innerHTML = '';
+            let totalArea = 0;
             areas.forEach((area, index) => {
-                const areaDiv = document.createElement('div');
-                areaDiv.textContent = `영역 ${index + 1}: 가로 ${area.width}cm, 세로 ${area.height}cm, 면적 ${area.area.toFixed(2)}m²`;
-                result.appendChild(areaDiv);
+                let areaSize = (area.width / 100) * (area.height / 100);
+                totalArea += areaSize;
+                areasInfo.innerHTML += `영역 ${index + 1}: 가로 ${Math.round(area.width)}cm, 세로 ${Math.round(area.height)}cm, 면적 ${areaSize.toFixed(2)}m²<br>`;
             });
-            displayTorimatResult();
+            areasInfo.innerHTML += `총 면적: ${totalArea.toFixed(2)}m²`;
         }
 
-        function undoLastArea() {
-            if (areas.length > 0) {
-                areas.pop();
-                imageContainer.removeChild(imageContainer.lastChild);
-                displayAreas();
-            }
+        function undoArea() {
+            areas.pop();
+            updateAreasInfo();
+            redrawAreas();
         }
 
         function resetAll() {
             areas = [];
-            const rects = document.querySelectorAll('.area-label');
-            rects.forEach(rect => imageContainer.removeChild(rect));
-            result.innerHTML = '';
-            document.getElementById('torimatResult').innerHTML = '';
+            updateAreasInfo();
+            imageContainer.innerHTML = '';
+            fileName.textContent = '선택된 파일 없음';
         }
 
-        function displayTorimatResult() {
-            const totalArea = areas.reduce((sum, area) => sum + area.area, 0);
-            const torimatResult = document.getElementById('torimatResult');
-            const totalAreaInCm2 = totalArea * 10000;
-            // Calculate required mats and prices based on Torimat logic
-            const mats50x50 = Math.ceil(totalAreaInCm2 / (50 * 50));
-            const mats80x80 = Math.floor(mats50x50 / 2.56);
-            const mats100x100 = Math.floor(mats50x50 / 2.56 * 2.56 / 3.8);
-            const mats120x80 = Math.floor(mats50x50 / 2.56 * 2.56 / 3.8);
+        function redrawAreas() {
+            let img = imageContainer.querySelector('img');
+            imageContainer.innerHTML = '';
+            if (img) {
+                imageContainer.appendChild(img);
+                areas.forEach(area => {
+                    let areaDiv = document.createElement('div');
+                    areaDiv.className = 'area';
+                    areaDiv.style.left = area.left / scale + 'px';
+                    areaDiv.style.top = area.top / scale + 'px';
+                    areaDiv.style.width = area.width / scale + 'px';
+                    areaDiv.style.height = area.height / scale + 'px';
+                    imageContainer.appendChild(areaDiv);
+                });
+            }
+        }
 
-            const prices = {
-                '자이언트매트': mats80x80 * 44000,
-                '자이언트플러스매트': mats80x80 * 47000,
-                '빅토리매트': mats100x100 * 79000,
-                '자이언트와이드매트': mats120x80 * 75000
+        function calculateAreas() {
+            let totalArea = 0;
+            areas.forEach(area => {
+                totalArea += (area.width / 100) * (area.height / 100);
+            });
+
+            let mats50x50 = totalArea * 4;
+            let matCounts = {
+                '80x80': Math.floor(mats50x50 / 2.56),
+                '100x100': Math.floor(mats50x50 / 2.56 * 2.56 / 3.8),
+                '120x80': Math.floor(mats50x50 / 2.56 * 2.56 / 3.8)
             };
 
-            let resultHtml = `
-                <table>
-                    <tr>
-                        <th>필요한 매트 수</th>
-                        <th>가격</th>
-                    </tr>
-                    <tr>
-                        <td>
-                            80x80: ${mats80x80}장<br>
-                            100x100: ${mats100x100}장<br>
-                            120x80: ${mats120x80}장
-                        </td>
-                        <td>
-                            자이언트매트: ${prices['자이언트매트'].toLocaleString()}원<br>
-                            자이언트플러스매트: ${prices['자이언트플러스매트'].toLocaleString()}원<br>
-                            빅토리매트: ${prices['빅토리매트'].toLocaleString()}원<br>
-                            자이언트와이드매트: ${prices['자이언트와이드매트'].toLocaleString()}원
-                        </td>
-                    </tr>
-                </table>
-            `;
-            torimatResult.innerHTML = resultHtml;
-        }
+let prices = {
+    '자이언트매트': matCounts['80x80'] * 44000,
+    '자이언트플러스매트': matCounts['80x80'] * 47000,
+    '빅토리매트': matCounts['100x100'] * 79000,
+    '자이언트와이드매트': matCounts['120x80'] * 75000
+};
 
-        document.getElementById('imageUpload').addEventListener('change', loadImage);
+let resultHtml = `
+    <table>
+        <tr>
+            <th>필요한 매트 수</th>
+            <th>가격</th>
+        </tr>
+        <tr>
+            <td>
+                80x80: ${matCounts['80x80']}장<br>
+                100x100: ${matCounts['100x100']}장<br>
+                120x80: ${matCounts['120x80']}장
+            </td>
+            <td>
+                자이언트매트: ${prices['자이언트매트'].toLocaleString()}원<br>
+                자이언트플러스매트: ${prices['자이언트플러스매트'].toLocaleString()}원<br>
+                빅토리매트: ${prices['빅토리매트'].toLocaleString()}원<br>
+                자이언트와이드매트: ${prices['자이언트와이드매트'].toLocaleString()}원
+            </td>
+        </tr>
+    </table>
+    <button class="copy-button" onclick="copyResult()">결과 복사하기</button>
+    <h2>예상 견적 안내</h2>
+    <div class="region-buttons">
+        <button class="region-button" onclick="copyRegion('수도권')"><b>수도권</b></button>
+        <button class="region-button" onclick="copyRegion('충청')"><b>충청</b></button>
+        <button class="region-button" onclick="copyRegion('지방')"><b>지방</b></button>
+    </div>
+`;
+
+torimatResult.innerHTML = resultHtml;
+}
+
+function copyResult() {
+    const resultText = document.querySelector('#torimatResult').innerText;
+    const textArea = document.createElement('textarea');
+    textArea.value = resultText;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    alert('결과가 클립보드에 복사되었습니다.');
+}
+
+function copyRegion(region) {
+    let regionText = {
+        '수도권': `
+🎉 예상 견적은 다음과 같습니다
+
+💚자이언트매트💚_80x80(44,000원)
+💚자이언트플러스매트💚_80x80+논슬립기능(47,000원)
+약 ${matCounts['자이언트매트']} 예상됩니다.
+
+💚자이언트와이드매트💚_120x80매트 논슬립기능(75,000원)
+💚빅토리매트💚_1미터x1미터+ 논슬립기능(79,000원 신제품 출시 한정가)
+약 ${matCounts['빅토리매트']} 예상됩니다.
+
+✅ 실제 시공 후 사용된 매트만큼만 결제해 주시면 됩니다.
+✅ 견적과 실제 시공 장수에 오차가 있을 수 있습니다.
+✅ 본사 직접 시공 & 전문가 시공 방침을 준수합니다.
+✅ 80매트 기준 50장 미만 시공비가 10만원 발생됩니다.
+✅ 100/120매트 기준 40장 미만 시공비가 10만원 발생됩니다.
+        `.trim(),
+        '충청': `
+🎉 예상 견적은 다음과 같습니다
+
+💚자이언트매트💚_80x80(44,000원)
+💚자이언트플러스매트💚_80x80+논슬립기능(47,000원)
+약 ${matCounts['자이언트매트']} 예상됩니다.
+
+💚자이언트와이드매트💚_120x80매트 논슬립기능(75,000원)
+💚빅토리매트💚_1미터x1미터+ 논슬립기능(79,000원 신제품 출시 한정가)
+약 ${matCounts['빅토리매트']} 예상됩니다.
+
+✅ 실제 시공 후 사용된 매트만큼만 결제해 주시면 됩니다.
+✅ 견적과 실제 시공 장수에 오차가 있을 수 있습니다.
+✅ 본사 직접 시공 & 전문가 시공 방침에 따라 시공비가 10만 원 부과됩니다.
+        `.trim(),
+        '지방': `
+🎉 예상 견적은 다음과 같습니다
+
+💚자이언트매트💚_80x80(44,000원)
+💚자이언트플러스매트💚_80x80+논슬립기능(47,000원)
+약 ${matCounts['자이언트매트']} 예상됩니다.
+
+💚자이언트와이드매트💚_120x80매트 논슬립기능(75,000원)
+💚빅토리매트💚_1미터x1미터+ 논슬립기능(79,000원 신제품 출시 한정가)
+약 ${matCounts['빅토리매트']} 예상됩니다.
+
+✅ 실제 시공 후 사용된 매트만큼만 결제해 주시면 됩니다.
+✅ 견적과 실제 시공 장수에 오차가 있을 수 있습니다.
+✅ 본사 직접 시공 & 전문가 시공 방침에 따라 시공비, 출장비 각 10만 원 부과됩니다.
+        `.trim()
+    };
+
+    const textArea = document.createElement('textarea');
+    textArea.value = regionText[region];
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    alert('결과가 클립보드에 복사되었습니다.');
+}
     </script>
 </body>
 </html>
