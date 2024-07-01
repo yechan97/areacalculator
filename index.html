@@ -9,17 +9,15 @@
         body {
             font-family: 'Gowun Dodum', sans-serif;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background-color: #E0F7D4;
             margin: 0;
-            padding: 20px;
         }
         .container {
             width: 90%;
-            max-width: 1200px;
+            max-width: 800px;
             margin: auto;
             padding: 20px;
             background-color: #fff;
@@ -27,18 +25,34 @@
             border-radius: 10px;
             box-sizing: border-box;
             text-align: center;
+            position: relative;
         }
         h1 {
             color: #81C784;
             margin-bottom: 20px;
             font-size: 2em;
         }
-        .canvas-container {
+        .upload-box {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
             position: relative;
-            border: 1px solid #ccc;
         }
-        canvas {
-            border: 1px solid #000;
+        .upload-box input[type="file"] {
+            display: none;
+        }
+        .upload-box label {
+            font-size: 1.2em;
+            cursor: pointer;
+            color: #007BFF;
+        }
+        .upload-box p {
+            margin: 10px 0;
+            color: #555;
+        }
+        #floor-plan {
+            max-width: 100%;
+            border: 1px solid #ccc;
         }
         .btn {
             padding: 10px 20px;
@@ -49,38 +63,43 @@
             color: #fff;
             margin: 5px;
         }
+        .btn-process {
+            background-color: #28A745;
+        }
         .btn-reset {
             background-color: #DC3545;
         }
-        .btn-calculate {
-            background-color: #007BFF;
-        }
-        .area-info {
+        #results {
             margin-top: 20px;
             text-align: left;
         }
-        .area-info p {
-            margin: 5px 0;
-        }
         .footer {
+            text-align: center;
             margin-top: 20px;
-            font-size: 0.9em;
-            color: #666;
+            font-size: 12px;
+            color: grey;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>토리매트 면적 계산기</h1>
-        <div class="canvas-container">
-            <canvas id="floorplanCanvas" width="800" height="600"></canvas>
+        <div class="upload-box">
+            <input type="file" id="file-input" accept="image/*">
+            <label for="file-input">파일 선택</label>
+            <p id="file-count">선택된 파일 없음</p>
         </div>
-        <button class="btn btn-reset" onclick="resetCanvas()">초기화</button>
-        <div id="areaInfo" class="area-info"></div>
-        <div id="calculationResult"></div>
-        <div class="footer">by_예찬</div>
+        <canvas id="canvas" width="800" height="600" style="border:1px solid #ccc;"></canvas>
+        <div>
+            <button class="btn btn-process" onclick="processAreas()">계산하기</button>
+            <button class="btn btn-reset" onclick="resetCanvas()">초기화</button>
+        </div>
+        <div id="results"></div>
+        <div class="footer">
+            <p>by_예찬</p>
+        </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.5.0/jszip.min.js"></script>
+
+    <script src="script.js"></script>
 </body>
 </html>
