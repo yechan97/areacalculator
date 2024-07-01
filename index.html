@@ -1,23 +1,24 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <title>토리매트 계산기</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>토리매트 면적 계산기</title>
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Gowun Dodum', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background-color: #E0F7D4;
-            margin: 0;
         }
-        .container {
+        .container, .input-container {
             width: 90%;
-            max-width: 800px;
+            max-width: 600px;
             margin: auto;
             padding: 20px;
             background-color: #fff;
@@ -27,65 +28,67 @@
             text-align: center;
         }
         h1 {
-            color: #81C784;
+            color: #7CB342;
+            font-weight: bold;
+            font-family: 'Gowun Dodum', sans-serif;
             margin-bottom: 20px;
-            font-size: 2em;
         }
-        .upload-box {
-            border: 2px dashed #ccc;
-            padding: 20px;
-            margin-bottom: 20px;
-            position: relative;
-        }
-        .upload-box input[type="file"] {
-            display: none;
-        }
-        .upload-box label {
-            font-size: 1.2em;
-            cursor: pointer;
-            color: #007BFF;
-        }
-        .upload-box p {
-            margin: 10px 0;
-            color: #555;
-        }
-        #imageContainer {
-            border: 1px solid #ccc;
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
             width: 100%;
-            height: auto;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 20px;
         }
-        #imageContainer img {
-            width: 100%;
-            height: auto;
+        .input-group label {
+            flex: 1;
+            margin-right: 10px;
+            text-align: left;
+            min-width: 80px;
         }
-        .area {
-            border: 2px solid red;
-            background-color: rgba(255, 0, 0, 0.3);
-            position: absolute;
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #D3D3D3;
+            border-radius: 5px;
+            width: calc(50% - 10px);
         }
-        .btn {
-            padding: 15px 30px;
-            font-size: 1em;
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            width: 48%;
+            margin: 10px 1%;
+            padding: 15px;
+            font-size: 19px;
             cursor: pointer;
             border: none;
             border-radius: 5px;
             color: #fff;
-            margin: 5px;
+            font-weight: bold;
         }
-        .btn-upload {
-            background-color: #007BFF;
+        button.calculate {
+            background-color: #81C784;
         }
-        .btn-reset {
-            background-color: #DC3545;
+        button.reset {
+            background-color: #FF8A65;
         }
-        .btn-calculate {
-            background-color: #28A745;
+        button.password-button {
+            background-color: #81C784;
+            width: 100%;
         }
-        .btn-undo {
-            background-color: #FFC107;
+        .input-container {
+            display: none;
+        }
+        .image-container {
+            display: none;
+            margin-bottom: 20px;
+        }
+        .image-container img {
+            max-width: 100%;
+            border: 2px solid #ddd;
         }
         .footer {
             text-align: center;
@@ -93,208 +96,210 @@
             font-size: 12px;
             color: grey;
         }
+        .password-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .password-input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #D3D3D3;
+            border-radius: 5px;
+            width: 80%;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>토리매트 면적 계산기</h1>
-        <div class="upload-box">
-            <input type="file" id="file-input">
-            <label for="file-input">파일 선택</label>
-            <p id="file-name">선택된 파일 없음</p>
+    <div class="password-container">
+        <input type="password" id="password" class="password-input" placeholder="비밀번호를 입력하세요">
+        <button onclick="checkPassword()" class="password-button">확인</button>
+    </div>
+    <div class="container" id="selection-container">
+        <h1>토리매트 계산기</h1>
+        <button onclick="showInputContainer()">수치 직접 입력하기</button>
+        <button onclick="showImageContainer()">도면 올리기</button>
+    </div>
+    <div class="input-container" id="input-container">
+        <h1>토리매트 계산기</h1>
+        <div class="input-group">
+            <label><b>거실</b></label>
+            <input type="number" id="거실_가로" placeholder="가로(cm)" value="0" onfocus="this.value=''">
+            <input type="number" id="거실_세로" placeholder="세로(cm)" value="0" onfocus="this.value=''">
         </div>
-        <div id="imageContainer"></div>
-        <button class="btn btn-undo" onclick="undoArea()">되돌리기</button>
-        <button class="btn btn-reset" onclick="resetAll()">초기화</button>
-        <button class="btn btn-calculate" onclick="calculateAreas()">계산하기</button>
-        <div id="areasInfo"></div>
-        <div id="torimatResult"></div>
-        <div class="footer">
-            <p>by_예찬</p>
+        <div class="input-group">
+            <label><b>복도</b></label>
+            <input type="number" id="복도_가로" placeholder="가로(cm)" value="0" onfocus="this.value=''">
+            <input type="number" id="복도_세로" placeholder="세로(cm)" value="0" onfocus="this.value=''">
+        </div>
+        <div class="input-group">
+            <label><b>주방</b></label>
+            <input type="number" id="주방_가로" placeholder="가로(cm)" value="0" onfocus="this.value=''">
+            <input type="number" id="주방_세로" placeholder="세로(cm)" value="0" onfocus="this.value=''">
+        </div>
+        <div class="input-group">
+            <label><b>작은 방</b></label>
+            <input type="number" id="작은방_가로" placeholder="가로(cm)" value="0" onfocus="this.value=''">
+            <input type="number" id="작은방_세로" placeholder="세로(cm)" value="0" onfocus="this.value=''">
+        </div>
+        <div class="input-group">
+            <label><b>큰 방</b></label>
+            <input type="number" id="큰방_가로" placeholder="가로(cm)" value="0" onfocus="this.value=''">
+            <input type="number" id="큰방_세로" placeholder="세로(cm)" value="0" onfocus="this.value=''">
+        </div>
+        <div class="input-group">
+            <label><b>발코니</b></label>
+            <input type="number" id="발코니_가로" placeholder="가로(cm)" value="0" onfocus="this.value=''">
+            <input type="number" id="발코니_세로" placeholder="세로(cm)" value="0" onfocus="this.value=''">
+        </div>
+        <div class="input-group">
+            <label><b>기타</b></label>
+            <input type="number" id="기타_가로" placeholder="가로(cm)" value="0" onfocus="this.value=''">
+            <input type="number" id="기타_세로" placeholder="세로(cm)" value="0" onfocus="this.value=''">
+        </div>
+        <div class="buttons">
+            <button class="calculate" onclick="calculate()">계산하기</button>
+            <button class="reset" onclick="resetValues()">초기화</button>
+        </div>
+        <div id="result"></div>
+    </div>
+    <div class="image-container" id="image-container">
+        <h1>토리매트 도면 계산기</h1>
+        <input type="file" id="file-input" accept="image/*">
+        <p id="file-count">선택된 파일 없음</p>
+        <div id="image-preview" class="image-preview"></div>
+        <button onclick="startDrawing()">영역 나누기</button>
+        <button onclick="calculateFromDrawing()">영역 지정 완료. 계산해줘</button>
+        <div class="buttons">
+            <button class="reset" onclick="resetDrawing()">되돌리기</button>
+            <button class="reset" onclick="resetAll()">초기화</button>
         </div>
     </div>
+    <div class="footer">
+        <p>by_예찬</p>
+    </div>
     <script>
-        let imageContainer = document.getElementById('imageContainer');
-        let fileInput = document.getElementById('file-input');
-        let fileName = document.getElementById('file-name');
-        let areasInfo = document.getElementById('areasInfo');
-        let torimatResult = document.getElementById('torimatResult');
-        let startX, startY, endX, endY;
-        let areas = [];
-        let scale = 1;
-
-        fileInput.addEventListener('change', (event) => {
-            let file = event.target.files[0];
-            fileName.textContent = file.name;
-            let reader = new FileReader();
-            reader.onload = (e) => {
-                let img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    imageContainer.innerHTML = '';
-                    imageContainer.appendChild(img);
-                    img.addEventListener('mousedown', startDrawing);
-                    img.addEventListener('mousemove', draw);
-                    img.addEventListener('mouseup', endDrawing);
-                    img.addEventListener('mouseleave', endDrawing);
-                    scale = img.naturalWidth / img.width;
-                };
-            };
-            reader.readAsDataURL(file);
-        });
-
-        function startDrawing(event) {
-            startX = event.offsetX;
-            startY = event.offsetY;
-            endX = startX;
-            endY = startY;
-            imageContainer.style.cursor = 'crosshair';
-        }
-
-        function draw(event) {
-            if (startX !== undefined && startY !== undefined) {
-                endX = event.offsetX;
-                endY = event.offsetY;
-                let width = endX - startX;
-                let height = endY - startY;
-                let areaDiv = document.createElement('div');
-                areaDiv.className = 'area';
-                areaDiv.style.left = startX + 'px';
-                areaDiv.style.top = startY + 'px';
-                areaDiv.style.width = width + 'px';
-                areaDiv.style.height = height + 'px';
-                imageContainer.innerHTML = '';
-                imageContainer.appendChild(event.target);
-                imageContainer.appendChild(areaDiv);
+        function checkPassword() {
+            const password = document.getElementById('password').value;
+            if (password === '0107') {
+                document.querySelector('.password-container').style.display = 'none';
+                document.getElementById('selection-container').style.display = 'block';
+            } else {
+                alert('비밀번호가 올바르지 않습니다.');
             }
         }
 
-        function endDrawing(event) {
-            if (startX !== undefined && startY !== undefined) {
-                endX = event.offsetX;
-                endY = event.offsetY;
-                let width = Math.abs(endX - startX);
-                let height = Math.abs(endY - startY);
-                let left = Math.min(startX, endX);
-                let top = Math.min(startY, endY);
-                let areaDiv = document.createElement('div');
-                areaDiv.className = 'area';
-                areaDiv.style.left = left + 'px';
-                areaDiv.style.top = top + 'px';
-                areaDiv.style.width = width + 'px';
-                areaDiv.style.height = height + 'px';
-                imageContainer.appendChild(areaDiv);
-
-                let area = {
-                    left: left * scale,
-                    top: top * scale,
-                    width: width * scale,
-                    height: height * scale
-                };
-                areas.push(area);
-                updateAreasInfo();
-
-                startX = undefined;
-                startY = undefined;
-                imageContainer.style.cursor = 'default';
-            }
+        function showInputContainer() {
+            document.getElementById('selection-container').style.display = 'none';
+            document.getElementById('input-container').style.display = 'block';
         }
 
-        function updateAreasInfo() {
-            areasInfo.innerHTML = '';
-            let totalArea = 0;
-            areas.forEach((area, index) => {
-                let areaSize = (area.width / 100) * (area.height / 100);
-                totalArea += areaSize;
-                areasInfo.innerHTML += `영역 ${index + 1}: 가로 ${Math.round(area.width)}cm, 세로 ${Math.round(area.height)}cm, 면적 ${areaSize.toFixed(2)}m²<br>`;
-            });
-            areasInfo.innerHTML += `총 면적: ${totalArea.toFixed(2)}m²`;
-        }
-
-        function undoArea() {
-            areas.pop();
-            updateAreasInfo();
-            redrawAreas();
+        function showImageContainer() {
+            document.getElementById('selection-container').style.display = 'none';
+            document.getElementById('image-container').style.display = 'block';
         }
 
         function resetAll() {
-            areas = [];
-            updateAreasInfo();
-            imageContainer.innerHTML = '';
-            fileName.textContent = '선택된 파일 없음';
+            location.reload();
         }
 
-        function redrawAreas() {
-            let img = imageContainer.querySelector('img');
-            imageContainer.innerHTML = '';
-            if (img) {
-                imageContainer.appendChild(img);
-                areas.forEach(area => {
-                    let areaDiv = document.createElement('div');
-                    areaDiv.className = 'area';
-                    areaDiv.style.left = area.left / scale + 'px';
-                    areaDiv.style.top = area.top / scale + 'px';
-                    areaDiv.style.width = area.width / scale + 'px';
-                    areaDiv.style.height = area.height / scale + 'px';
-                    imageContainer.appendChild(areaDiv);
-                });
-            }
-        }
+function calculate() {
+    let rooms = [
+        {name: '거실', width: document.getElementById('거실_가로').value, length: document.getElementById('거실_세로').value},
+        {name: '복도', width: document.getElementById('복도_가로').value, length: document.getElementById('복도_세로').value},
+        {name: '주방', width: document.getElementById('주방_가로').value, length: document.getElementById('주방_세로').value},
+        {name: '작은 방', width: document.getElementById('작은방_가로').value, length: document.getElementById('작은방_세로').value},
+        {name: '큰 방', width: document.getElementById('큰방_가로').value, length: document.getElementById('큰방_세로').value},
+        {name: '발코니', width: document.getElementById('발코니_가로').value, length: document.getElementById('발코니_세로').value},
+        {name: '기타', width: document.getElementById('기타_가로').value, length: document.getElementById('기타_세로').value}
+    ];
 
-        function calculateAreas() {
-            let totalArea = 0;
-            areas.forEach(area => {
-                totalArea += (area.width / 100) * (area.height / 100);
-            });
+    let totalMats50x50 = 0;
+    rooms.forEach(room => {
+        let width = parseFloat(room.width) || 0;
+        let length = parseFloat(room.length) || 0;
+        let matsAlongWidth = Math.ceil(width / 50);
+        let matsAlongLength = Math.ceil(length / 50);
+        totalMats50x50 += matsAlongWidth * matsAlongLength;
+    });
 
-            let mats50x50 = totalArea * 4;
-            let matCounts = {
-                '80x80': Math.floor(mats50x50 / 2.56),
-                '100x100': Math.floor(mats50x50 / 2.56 * 2.56 / 3.8),
-                '120x80': Math.floor(mats50x50 / 2.56 * 2.56 / 3.8)
-            };
+    let matCounts = {
+        '80x80': Math.floor(totalMats50x50 / 2.56),
+        '100x100': Math.floor(totalMats50x50 / 2.56 * 2.56 / 3.8),
+        '120x80': Math.floor(totalMats50x50 / 2.56 * 2.56 / 3.8)
+    };
 
-let prices = {
-    '자이언트매트': matCounts['80x80'] * 44000,
-    '자이언트플러스매트': matCounts['80x80'] * 47000,
-    '빅토리매트': matCounts['100x100'] * 79000,
-    '자이언트와이드매트': matCounts['120x80'] * 75000
-};
+    let prices = {
+        '자이언트매트': matCounts['80x80'] * 44000,
+        '자이언트플러스매트': matCounts['80x80'] * 47000,
+        '빅토리매트': matCounts['100x100'] * 79000,
+        '자이언트와이드매트': matCounts['120x80'] * 75000
+    };
 
-let resultHtml = `
-    <table>
-        <tr>
-            <th>필요한 매트 수</th>
-            <th>가격</th>
-        </tr>
-        <tr>
-            <td>
-                80x80: ${matCounts['80x80']}장<br>
-                100x100: ${matCounts['100x100']}장<br>
-                120x80: ${matCounts['120x80']}장
-            </td>
-            <td>
-                자이언트매트: ${prices['자이언트매트'].toLocaleString()}원<br>
-                자이언트플러스매트: ${prices['자이언트플러스매트'].toLocaleString()}원<br>
-                빅토리매트: ${prices['빅토리매트'].toLocaleString()}원<br>
-                자이언트와이드매트: ${prices['자이언트와이드매트'].toLocaleString()}원
-            </td>
-        </tr>
-    </table>
-    <button class="copy-button" onclick="copyResult()">결과 복사하기</button>
-    <h2>예상 견적 안내</h2>
-    <div class="region-buttons">
-        <button class="region-button" onclick="copyRegion('수도권')"><b>수도권</b></button>
-        <button class="region-button" onclick="copyRegion('충청')"><b>충청</b></button>
-        <button class="region-button" onclick="copyRegion('지방')"><b>지방</b></button>
-    </div>
-`;
+    let resultHtml = `
+        <table>
+            <tr>
+                <th>필요한 매트 수</th>
+                <th>가격</th>
+            </tr>
+            <tr>
+                <td>
+                    80x80: ${matCounts['80x80']}장<br>
+                    100x100: ${matCounts['100x100']}장<br>
+                    120x80: ${matCounts['120x80']}장
+                </td>
+                <td>
+                    자이언트매트: ${prices['자이언트매트'].toLocaleString()}원<br>
+                    자이언트플러스매트: ${prices['자이언트플러스매트'].toLocaleString()}원<br>
+                    빅토리매트: ${prices['빅토리매트'].toLocaleString()}원<br>
+                    자이언트와이드매트: ${prices['자이언트와이드매트'].toLocaleString()}원
+                </td>
+            </tr>
+        </table>
+        <button class="copy-button" onclick="copyResult()">결과 복사하기</button>
+        <div id="estimate-guide">
+            <h2>예상 견적 안내</h2>
+            <div class="region-buttons">
+                <button class="region-button" onclick="copyRegion('수도권')"><b>수도권</b></button>
+                <button class="region-button" onclick="copyRegion('충청')"><b>충청</b></button>
+                <button class="region-button" onclick="copyRegion('지방')"><b>지방</b></button>
+            </div>
+        </div>
+    `;
 
-torimatResult.innerHTML = resultHtml;
+    document.getElementById('result').innerHTML = resultHtml;
+    document.getElementById('estimate-guide').style.display = 'block';
+}
+
+function resetValues() {
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.value = 0;
+    });
+    document.getElementById('result').innerHTML = "";
+    document.getElementById('estimate-guide').style.display = 'none';
 }
 
 function copyResult() {
-    const resultText = document.querySelector('#torimatResult').innerText;
+    let matCounts = {
+        '자이언트매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(1)').innerText.split('\n')[0].split(': ')[1],
+        '빅토리매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(1)').innerText.split('\n')[1].split(': ')[1],
+        '자이언트와이드매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(1)').innerText.split('\n')[2].split(': ')[1]
+    };
+
+    let prices = {
+        '자이언트매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(2)').innerText.split('\n')[0].split(': ')[1],
+        '자이언트플러스매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(2)').innerText.split('\n')[1].split(': ')[1],
+        '빅토리매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(2)').innerText.split('\n')[2].split(': ')[1],
+        '자이언트와이드매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(2)').innerText.split('\n')[3].split(': ')[1]
+    };
+
+    let resultText = `
+자이언트매트: ${matCounts['자이언트매트']}, ${prices['자이언트매트']}
+자이언트플러스매트: ${matCounts['자이언트매트']}, ${prices['자이언트플러스매트']}
+빅토리매트: ${matCounts['빅토리매트']}, ${prices['빅토리매트']}
+자이언트와이드매트: ${matCounts['자이언트와이드매트']}, ${prices['자이언트와이드매트']}
+    `.trim();
+
     const textArea = document.createElement('textarea');
     textArea.value = resultText;
     document.body.appendChild(textArea);
@@ -305,6 +310,19 @@ function copyResult() {
 }
 
 function copyRegion(region) {
+    let matCounts = {
+        '자이언트매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(1)').innerText.split('\n')[0].split(': ')[1],
+        '빅토리매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(1)').innerText.split('\n')[1].split(': ')[1],
+        '자이언트와이드매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(1)').innerText.split('\n')[2].split(': ')[1]
+    };
+
+    let prices = {
+        '자이언트매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(2)').innerText.split('\n')[0].split(': ')[1],
+        '자이언트플러스매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(2)').innerText.split('\n')[1].split(': ')[1],
+        '빅토리매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(2)').innerText.split(': ')[2],
+        '자이언트와이드매트': document.querySelector('#result table tr:nth-child(2) td:nth-child(2)').innerText.split(': ')[3]
+    };
+
     let regionText = {
         '수도권': `
 🎉 예상 견적은 다음과 같습니다
@@ -322,8 +340,8 @@ function copyRegion(region) {
 ✅ 본사 직접 시공 & 전문가 시공 방침을 준수합니다.
 ✅ 80매트 기준 50장 미만 시공비가 10만원 발생됩니다.
 ✅ 100/120매트 기준 40장 미만 시공비가 10만원 발생됩니다.
-        `.trim(),
-        '충청': `
+`.trim(),
+'충청': `
 🎉 예상 견적은 다음과 같습니다
 
 💚자이언트매트💚_80x80(44,000원)
@@ -337,8 +355,8 @@ function copyRegion(region) {
 ✅ 실제 시공 후 사용된 매트만큼만 결제해 주시면 됩니다.
 ✅ 견적과 실제 시공 장수에 오차가 있을 수 있습니다.
 ✅ 본사 직접 시공 & 전문가 시공 방침에 따라 시공비가 10만 원 부과됩니다.
-        `.trim(),
-        '지방': `
+`.trim(),
+'지방': `
 🎉 예상 견적은 다음과 같습니다
 
 💚자이언트매트💚_80x80(44,000원)
@@ -352,17 +370,94 @@ function copyRegion(region) {
 ✅ 실제 시공 후 사용된 매트만큼만 결제해 주시면 됩니다.
 ✅ 견적과 실제 시공 장수에 오차가 있을 수 있습니다.
 ✅ 본사 직접 시공 & 전문가 시공 방침에 따라 시공비, 출장비 각 10만 원 부과됩니다.
-        `.trim()
-    };
+`.trim()
+};
 
-    const textArea = document.createElement('textarea');
-    textArea.value = regionText[region];
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textArea);
-    alert('결과가 클립보드에 복사되었습니다.');
+const textArea = document.createElement('textarea');
+textArea.value = regionText[region];
+document.body.appendChild(textArea);
+textArea.select();
+document.execCommand('copy');
+document.body.removeChild(textArea);
+alert('결과가 클립보드에 복사되었습니다.');
 }
-    </script>
-</body>
+
+function copyMacro(macro) {
+let macroText = {
+'인삿말': `
+✅ 안녕하세요💕
+안전해서 더욱 안심이 되는 매트!!
+💓토리매트💓 입니다
+
+1200/1000/800 초대형매트의 시공으로
+우리집을 더욱 넓고 풍요롭게💚
+
+적어진 이음새로 관리까지 편안하고
+🌟누구도 따라올 수 없는🌟
+탄탄하고 쫀쫀한 고밀도 고품질 매트라지요❗💓
+품질1⃣위, 시공1⃣위, 고객만족1⃣위🌟
+
+☝예상견적을 안내해 드릴게요
+`.trim(),
+'시공 사례': `
+시공 사례를 보실 수 있도록 링크 남겨 드릴게요👇
+
+💥블로그 시공 사례
+https://blog.naver.com/torimat
+💥유튜브 채널
+www.youtube.com/@torimatlove
+💥인스타
+https://www.instagram.com/torimat_official?igsh=YXRicGxsMjFhMG1l
+💥공식 홈페이지
+www.torimat.com
+💥카카오톡 바로 상담
+http://pf.kakao.com/_xnAFEG
+
+☎ 1544-0074
+☎ 010-8200-8942
+`.trim(),
+'할인 안내': `
+💗지인 할인 5만원 가능합니다! (50장 이하 3만원)
+💗현금영수증 (x) 5만원 할인 가능합니다! (50장 이하 3만원)
+💗후기 2건 작성 3만원 할인 가능합니다!
+`.trim(),
+'공기 순환로': `
+공기 순환로가 있으면 공기가 통과되는 과정에서 마루 바닥면에 공기 순환로 모양대로 변색이 옵니다.
+ 
+그러한 이슈를 해결하기 위해 밑면에 공기 순환로를 우레탄으로 채우고, 항균 및 곰팡이 방지 처리를 해놓았습니다.
+
+바닥에 시공되는 매트이기 때문에 "0.01프로 조차 바닥에 손상이 없다" 라고 말씀 드릴순 없지만, 위 말씀드린 처리 후 
+압박 및 밀폐 전문 시공방식을 채택하기에 바닥 손상도가 최소화된 최신의 매트라고 말씀드릴 수 있습니다.
+
+품질력, 시공실력이 뛰어난 토리매트를 경험해보세요💞
+`.trim(),
+'예약금 안내': `
+356 1570 5481 03 농협 구선숙 입니다:)
+예약금 10만원 발생됩니다
+시공 5일 전 취소 및 환불 가능합니다^^
+
+입금 후 꼭 문자 주세요♡
+`.trim(),
+'마무리 인사': `
+우리 가족의 생활 공간, 꼼꼼하게 비교해 보시고 선택하셔야겠지요~
+
+안전해서 더욱 안심이 되는 토리매트 입니다👍
+
+궁금하신 사항은 언제든 편하신 시간에 말씀해 주세요.
+정성껏 답변 드리도록 하겠습니다😄
+
+무료 샘플 발송 서비스를 진행하고 있습니다. 
+필요하실 경우 말씀해 주시면 발송해드리겠습니다~!💞
+`.trim()
+};
+
+const textArea = document.createElement('textarea');
+textArea.value = macroText[macro];
+document.body.appendChild(textArea);
+textArea.select();
+document.execCommand('copy');
+document.body.removeChild(textArea);
+alert('클립보드에 복사되었습니다.');
+}
+</script>
 </html>
